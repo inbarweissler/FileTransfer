@@ -1,19 +1,17 @@
-# File Transfer Projcet
+# File Server Projcet
 
 This project demonstrates a simple client-server file transfer system using C programming language.
 
-The main components are:
-<ul>
-<li>A bash script (run.sh) - automates the process of compiling both server and client files.</li>
-<li>A server (server.o) - listens for incoming clients, and sends a simple file text.</li>
-<li>A client (client.o) - connects to the server and receives a file.</li>
-</ul>
+## Project Structure
+
+* A makefile - automates the process of compiling both server and client files.
+* A server (server.c) - listens for incoming clients, and sends a simple file text.
+* A client (client.c) - connects to the server and receives a file.
+
+## Run Example
 
 Run the program using the following commands:
-<br/>
-cd Tests
-<br/>
-chmod +x run.sh
-<br/>
-./run.sh
 
+``` shell
+make test
+```
