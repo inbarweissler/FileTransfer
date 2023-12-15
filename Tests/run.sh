@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Compile server
-gcc server.c -o server
+gcc ../server.c -o server
 
 # Check if compilation was successful
 if [ $? -eq 0 ]; then
@@ -11,7 +11,7 @@ if [ $? -eq 0 ]; then
     ./server &
     
     # Compile client
-    gcc client.c -o client
+    gcc ../client.c -o client
 
     # Check if compilation was successful
     if [ $? -eq 0 ]; then
