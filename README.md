@@ -2,12 +2,14 @@
 
 This project demonstrates a simple client-server file transfer system using C programming language.
 
-Main components are:
-A bash script (run.sh) - automate the process of compiling both server and client files.
-A server (server.o) - listens for incoming clients, and sends a simple file text.
-A client (client.o) - connects to the server and receives a file.
+The main components are:
+<ul>
+<li>A bash script (run.sh) - automates the process of compiling both server and client files.</li>
+<li>A server (server.o) - listens for incoming clients, and sends a simple file text.</li>
+<li>A client (client.o) - connects to the server and receives a file.</li>
+</ul>
 
 Run the program using the following commands:
-cd Texts
-chmod +x run.sh
-./run.sh
+<ul>cd Texts</li>
+<ul>chmod +x run.sh</li>
+<ul>./run.sh</li>
