@@ -9,8 +9,11 @@ The main components are:
 <li>A client (client.o) - connects to the server and receives a file.</li>
 </ul>
 
-Run the program using the following commands: <br/>
-cd Tests <br/>
-chmod +x run.sh <br/>
+Run the program using the following commands:
+<br/>
+cd Tests
+<br/>
+chmod +x run.sh
+<br/>
 ./run.sh
 
