@@ -10,6 +10,8 @@ The main components are:
 </ul>
 
 Run the program using the following commands:
-<ul>cd Texts</li>
-<ul>chmod +x run.sh</li>
-<ul>./run.sh</li>
+<ul>
+cd Tests
+chmod +x run.sh
+./run.sh
+</ul>
