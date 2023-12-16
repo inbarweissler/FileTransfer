@@ -12,20 +12,19 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-
+#include <stdbool.h>
 
 /******************
  * Global Constants
  ******************/
 #define PORT_NUM 1908
-#define FILE_NAME "./server_files/example_file.txt"
-#define BUFFER_SIZE 1024
-
+#define OUT_BUFFER_SIZE 1024 //outbound
+#define IN_FILE_NAME_BUFFER_SIZE 128 //inbound
+#define FILE_DIR "./server_files/"
 
 /****************
  * Function Declarations
  ****************/
-
 /*
  * Sends the content of a file to a connected client over a specified socket.
  * Parameters:
@@ -34,29 +33,7 @@
  * Returns:
  *   - None
  */
-
-void send_file(int client_socket, const char *file_name) {
-    // read a file and returns a pointer
-    FILE *file = fopen(file_name, "rb");
-    if (file == NULL) {
-        perror("Error: cannot open file");
-        return;
-    }
-
-    // a temporary array to store the data before sending it to the client
-    char msg[BUFFER_SIZE];
-
-    // a param defining how many bytes were read from the file
-    size_t bytesCnt;
-
-    // reads data into msg array, and send it to client over the specified socket
-    while ((bytesCnt = fread(msg, 1, sizeof(msg), file)) > 0) {
-        send(client_socket, msg, bytesCnt, 0);
-    }
-
-    // closing the file
-    fclose(file);
-}
+void send_file(int client_socket);
 
 
 int main() {
@@ -108,15 +85,53 @@ int main() {
     }
 
     // Print connection information
-    // TODO: add client ID
     printf("Client is connected\n");
 
     // Sending file to the client
-    // TODO: receive file name from client
-    send_file(client_socket, FILE_NAME);
+    send_file(client_socket);
 
     close(client_socket); // close the client socket before exiting
     close(server_socket); // close the server socket before exiting
 
+    printf("exiting\n");
+    
     return 0;
+}
+
+
+void send_file(int client_socket) {
+    char file_name_buffer[IN_FILE_NAME_BUFFER_SIZE];
+    memset(file_name_buffer, 0, sizeof(file_name_buffer));
+
+    // Receive the file name from the client
+    if (recv(client_socket, file_name_buffer, sizeof(file_name_buffer), 0) < 0) {
+        perror("Error: cannot receive file name");
+        close(client_socket);
+        return;
+    }
+
+    // make the file path
+    char file_path[256];
+    snprintf(file_path, sizeof(file_path), "%s%s", FILE_DIR, file_name_buffer);
+
+    // read a file and returns a pointer
+    FILE *file = fopen(file_path, "rb");
+    if (file == NULL) {
+        perror("Error: cannot open file");
+        return;
+    }
+
+    // a temporary array to store the data before sending it to the client
+    char msg[OUT_BUFFER_SIZE];
+
+    // a param defining how many bytes were read from the file
+    size_t bytesCnt;
+
+    // reads data into msg array, and send it to client over the specified socket
+    while ((bytesCnt = fread(msg, 1, sizeof(msg), file)) > 0) {
+        send(client_socket, msg, bytesCnt, 0);
+    }
+
+    // closing the file
+    fclose(file);
 }

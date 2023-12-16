@@ -18,12 +18,13 @@
  ******************/
 #define SERVER_IP "127.0.0.1" // assuming that the server runs on the same computer
 #define PORT_NUM 1908
-#define BUFFER_SIZE 1024
-
+#define OUT_BUFFER_SIZE 1024 //outbound
+#define FILE_DIR "./client_files/"
 
 /****************
  * Function Declarations
  ****************/
+//char* get_file_name2(int file_id, int version_num);
 
 /*
  * Receives the content of a file from a connected server over a specified socket.
@@ -33,36 +34,22 @@
  * Returns:
  *   - None
  */
-void receive_file(int server_socket, const char *file_name) {
-    // open the file in write mode
-    FILE *file = fopen(file_name, "wb");
+void receive_file(int server_socket, const char *file_name);
 
-    if (file == NULL) {
-        perror("Error: cannot open file");
-        return;
+
+int main(int argc, char *argv[]) {
+    // Check if the correct number of arguments are provided
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s <file_name>\n", argv[0]);
+        exit(EXIT_FAILURE);
     }
 
-    char msg[BUFFER_SIZE];
-    ssize_t bytesCnt;
+    const char *file_name = argv[1];
 
-    // receive data from the server over the specied server_socket
-    while ((bytesCnt = recv(server_socket, msg, sizeof(msg), 0)) > 0) {
-        fwrite(msg, 1, bytesCnt, file); // write msg to the file
+    // TODO: validate file_name length
 
-        // Print received data to the screen
-        // TODO: delete this part later, this is for debug
-        fwrite(msg, 1, bytesCnt, stdout);
-    }
-
-    // closing the file
-    fclose(file);
-}
-
-
-int main() {
     // Creating a socket
     int client_socket; // store the socket descriptor for the client
-    
 
     // assuming IPv4, and using TCP protocol
     if ((client_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
@@ -77,7 +64,6 @@ int main() {
     server_addr.sin_addr.s_addr = inet_addr(SERVER_IP); // converts the server's IP to binary representation
     server_addr.sin_port = htons(PORT_NUM); // convers the port number to network byte order
 
-
     // Connecting to the server
     if (connect(client_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
         perror("Error: cannot connect to the server");
@@ -87,11 +73,47 @@ int main() {
 
     printf("Connected to server at %s\n", SERVER_IP);
 
-    // Receive the file from the server, and naming it received_file
-    // TODO: generate name based on the file that was received
-    receive_file(client_socket, "./client_files/received_file.txt");
+    // Sending file_name to the server    
+        if (send(client_socket, file_name, strlen(file_name), 0) == -1) {
+        perror("Error: cannot sending file name");
+        close(client_socket);
+        exit(EXIT_FAILURE);
+    }
+
+
+    receive_file(client_socket, file_name);
 
     close(client_socket); // close the client socket before exiting
 
     return 0;
+}
+
+
+void receive_file(int server_socket, const char *file_name) {
+    // make the file path
+    char file_path[256];
+    snprintf(file_path, sizeof(file_path), "%s%s", FILE_DIR, file_name);
+    // open the file in write mode
+    FILE *file = fopen(file_path, "wb");
+
+    if (file == NULL) {
+        perror("Error: cannot open file");
+        return;
+    }
+    
+    char msg[OUT_BUFFER_SIZE];
+    ssize_t bytesCnt;
+
+    // receive data from the server over the specied server_socket
+    while ((bytesCnt = recv(server_socket, msg, sizeof(msg), 0)) > 0) {
+        fwrite(msg, 1, bytesCnt, file); // write msg to the file
+
+        // Print received data to the screen
+        // TODO: delete this part later, this is for debug
+        fwrite(msg, 1, bytesCnt, stdout);
+    }
+
+    // closing the file and server socket
+    fclose(file);
+    close(server_socket);
 }

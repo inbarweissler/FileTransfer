@@ -1,1 +1,4 @@
 .vscode/
+bin/
+client_files/
+test/

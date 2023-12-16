@@ -1,1 +1,0 @@
-Simple file to check the basic implementation

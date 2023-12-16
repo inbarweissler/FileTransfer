@@ -3,6 +3,7 @@ CFLAGS = -Wall -Wextra
 SERVER_SRC = ./src/server.c
 CLIENT_SRC = ./src/client.c
 
+
 test: clean all run_server run_client
 
 all: server client files
@@ -23,7 +24,7 @@ run_server: server
 	./bin/server &
 
 run_client: client
-	./bin/client
+	./bin/client 11_1.txt
 
 clean:
 	rm -f ./bin/server ./bin/client
