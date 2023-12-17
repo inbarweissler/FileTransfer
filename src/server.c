@@ -39,7 +39,7 @@ void *send_file(void *socket_desc);
 
 
 int main() {
-    // 1) Create socket
+    // Create socket
     int server_socket, client_socket;
 
     // assuming IPv4, and using TCP protocol
@@ -48,7 +48,7 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    // 2) Server address setup
+    // Server address setup
     struct sockaddr_in server_addr, client_addr;
     socklen_t client_addr_len = sizeof(client_addr);
 

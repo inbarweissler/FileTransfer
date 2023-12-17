@@ -20,10 +20,13 @@
 #define PORT_NUM 1908
 #define OUT_BUFFER_SIZE 1024 // outbound buffer size
 #define FILE_DIR "./client_files/"
+#define LOG_FILE_DIR "./log/client_log.txt"
 
 /****************
  * Function Declarations
  ****************/
+
+FILE *log_file; // Global variable to store the log file pointer
 
 /*
  * Receives the content of a file from a connected server over a specified socket.
@@ -37,15 +40,24 @@ void receive_file(int server_socket, const char *file_name);
 
 
 int main(int argc, char *argv[]) {
+    log_file = fopen(LOG_FILE_DIR, "a"); // Open the log file in append mode
+    // TODO: consider changing to write mode
+
+    if (log_file == NULL) {
+        perror("Error: cannot open log file");
+        exit(EXIT_FAILURE);
+    }
+
     // Check if the correct number of arguments are provided
-    if (argc != 2) {
+    if (argc != 3) {
         fprintf(stderr, "Usage: %s <file_name>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
-    const char *file_name = argv[1];
+    int client_id = atoi(argv[1]);
+    const char *file_name = argv[2]; // TODO: validate file_name length
 
-    // TODO: validate file_name length
+    fprintf(log_file, "ID %d, file-name %s\n", client_id, file_name); 
 
     // Creating a socket
     int client_socket; // store the socket descriptor for the client
@@ -75,9 +87,9 @@ int main(int argc, char *argv[]) {
     t = time(NULL);
     struct tm tm;
 	tm = *localtime(&t);
-    printf("Current Time: %d:%d:%03d\n", tm.tm_hour, tm.tm_min, tm.tm_sec);
+    fprintf(log_file, "#%d Current Time: %d:%d:%03d\n", client_id, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
-    printf("Connected to server at %s\n", SERVER_IP);
+    fprintf(log_file, "#%d Connected to server at %s\n", client_id, SERVER_IP);
 
     // Sending file_name to the server    
         if (send(client_socket, file_name, strlen(file_name), 0) == -1) {
@@ -90,7 +102,7 @@ int main(int argc, char *argv[]) {
     receive_file(client_socket, file_name);
 
     close(client_socket); // close the client socket before exiting
-
+    fclose(log_file); // Close the log file before exiting
     return 0;
 }
 
