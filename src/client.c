@@ -2,15 +2,15 @@
  * File: client.c
  * Author: Inbar R. Weissler
  * Created on: December 15, 2023
- * Description:
+ * Description: Client-side code for receiving files from a server.
  */
-
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <time.h>
 
 
 /******************
@@ -18,13 +18,12 @@
  ******************/
 #define SERVER_IP "127.0.0.1" // assuming that the server runs on the same computer
 #define PORT_NUM 1908
-#define OUT_BUFFER_SIZE 1024 //outbound
+#define OUT_BUFFER_SIZE 1024 // outbound buffer size
 #define FILE_DIR "./client_files/"
 
 /****************
  * Function Declarations
  ****************/
-//char* get_file_name2(int file_id, int version_num);
 
 /*
  * Receives the content of a file from a connected server over a specified socket.
@@ -70,6 +69,13 @@ int main(int argc, char *argv[]) {
         close(client_socket); // close the client socket before exiting
         exit(EXIT_FAILURE);
     }
+    
+    // Print current time
+    time_t t;
+    t = time(NULL);
+    struct tm tm;
+	tm = *localtime(&t);
+    printf("Current Time: %d:%d:%03d\n", tm.tm_hour, tm.tm_min, tm.tm_sec);
 
     printf("Connected to server at %s\n", SERVER_IP);
 
@@ -90,10 +96,11 @@ int main(int argc, char *argv[]) {
 
 
 void receive_file(int server_socket, const char *file_name) {
-    // make the file path
+    // Make the file path
     char file_path[256];
     snprintf(file_path, sizeof(file_path), "%s%s", FILE_DIR, file_name);
-    // open the file in write mode
+    
+    // Open the file in write mode
     FILE *file = fopen(file_path, "wb");
 
     if (file == NULL) {
@@ -104,7 +111,7 @@ void receive_file(int server_socket, const char *file_name) {
     char msg[OUT_BUFFER_SIZE];
     ssize_t bytesCnt;
 
-    // receive data from the server over the specied server_socket
+    // Receive data from the server over the specied server_socket
     while ((bytesCnt = recv(server_socket, msg, sizeof(msg), 0)) > 0) {
         fwrite(msg, 1, bytesCnt, file); // write msg to the file
 
@@ -113,7 +120,7 @@ void receive_file(int server_socket, const char *file_name) {
         fwrite(msg, 1, bytesCnt, stdout);
     }
 
-    // closing the file and server socket
+    // Closing the file and server socket
     fclose(file);
     close(server_socket);
 }

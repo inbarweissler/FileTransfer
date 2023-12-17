@@ -2,9 +2,8 @@
  * File: server.c
  * Author: Inbar R. Weissler
  * Created on: December 15, 2023
- * Description:
+ * Description: Server-side code for sending files to connected clients.
  */
-
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,18 +12,21 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <stdbool.h>
+#include <pthread.h>
 
 /******************
  * Global Constants
  ******************/
 #define PORT_NUM 1908
-#define OUT_BUFFER_SIZE 1024 //outbound
-#define IN_FILE_NAME_BUFFER_SIZE 128 //inbound
+#define OUT_BUFFER_SIZE 1024 //outbound buffer size
+#define IN_FILE_NAME_BUFFER_SIZE 128 //inbound buffer size
 #define FILE_DIR "./server_files/"
+#define MAX_CLIENTS 5
 
 /****************
  * Function Declarations
  ****************/
+
 /*
  * Sends the content of a file to a connected client over a specified socket.
  * Parameters:
@@ -33,12 +35,10 @@
  * Returns:
  *   - None
  */
-void send_file(int client_socket);
+void *send_file(void *socket_desc);
 
 
 int main() {
-    // TODO: enable upto MAX_CLIENTS connections in parallel
-
     // 1) Create socket
     int server_socket, client_socket;
 
@@ -66,7 +66,7 @@ int main() {
     }
 
     // Listening for connections
-    if (listen(server_socket, 1) == -1) { // accept incoming connection upon success
+    if (listen(server_socket, MAX_CLIENTS) == -1) { // accept upto max incoming connections upon success
         perror("Error: listening failure");
         close(server_socket); // close the server socket before exiting
         exit(EXIT_FAILURE);
@@ -74,23 +74,36 @@ int main() {
 
     printf("Server is listening on port %d\n", PORT_NUM);
 
-    // Accepting a new connection
-    client_socket = accept(server_socket, (struct sockaddr *)&client_addr, &client_addr_len);
-    // if succeed, return a new socket descriptor for the client communication
+    while(1){
+        // Accepting a new connection
+        client_socket = accept(server_socket, (struct sockaddr *)&client_addr, &client_addr_len);
+        // if succeed, return a new socket descriptor for the client communication
 
-    if (client_socket == -1) {
-        perror("Error: cannot accepting connection");
-        close(server_socket); // close the server socket before exiting
-        exit(EXIT_FAILURE);
+        if (client_socket == -1) {
+            perror("Error: cannot accepting connection");
+            continue;
+        }
+
+        // Print connection information
+        printf("Client is connected\n");
+
+        // Handle the connection in a new thread
+        pthread_t thread;
+        int *client_socket_ptr = malloc(sizeof(int));
+        *client_socket_ptr = client_socket;
+
+        // Sending file to the client
+        if (pthread_create(&thread, NULL, send_file, (void *)client_socket_ptr) < 0) {
+            perror("Error creating thread");
+            free(client_socket_ptr);
+            close(client_socket);
+        }
+
+        // Detach the thread to avoid memory leaks
+        pthread_detach(thread);
+
     }
 
-    // Print connection information
-    printf("Client is connected\n");
-
-    // Sending file to the client
-    send_file(client_socket);
-
-    close(client_socket); // close the client socket before exiting
     close(server_socket); // close the server socket before exiting
 
     printf("exiting\n");
@@ -99,7 +112,9 @@ int main() {
 }
 
 
-void send_file(int client_socket) {
+void *send_file(void *socket_desc) {
+    int client_socket = *(int *)socket_desc;
+
     char file_name_buffer[IN_FILE_NAME_BUFFER_SIZE];
     memset(file_name_buffer, 0, sizeof(file_name_buffer));
 
@@ -107,31 +122,34 @@ void send_file(int client_socket) {
     if (recv(client_socket, file_name_buffer, sizeof(file_name_buffer), 0) < 0) {
         perror("Error: cannot receive file name");
         close(client_socket);
-        return;
+        return NULL;
     }
 
-    // make the file path
+    // Make the file path
     char file_path[256];
     snprintf(file_path, sizeof(file_path), "%s%s", FILE_DIR, file_name_buffer);
 
-    // read a file and returns a pointer
+    // Read a file and returns a pointer
     FILE *file = fopen(file_path, "rb");
     if (file == NULL) {
         perror("Error: cannot open file");
-        return;
+        return NULL;
     }
 
-    // a temporary array to store the data before sending it to the client
+    // A temporary array to store the data before sending it to the client
     char msg[OUT_BUFFER_SIZE];
 
-    // a param defining how many bytes were read from the file
+    // A param defining how many bytes were read from the file
     size_t bytesCnt;
 
-    // reads data into msg array, and send it to client over the specified socket
+    // Reads data into msg array, and send it to client over the specified socket
     while ((bytesCnt = fread(msg, 1, sizeof(msg), file)) > 0) {
         send(client_socket, msg, bytesCnt, 0);
     }
 
-    // closing the file
+    // Closing the file and client socket
     fclose(file);
+    close(client_socket);
+    free(socket_desc);
+    return NULL;
 }
