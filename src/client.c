@@ -119,6 +119,9 @@ int main(int argc, char *argv[]) {
 
 
 void receive_file(int server_socket, const char *file_name) {
+    // some channel delays
+    sleep(2);
+    
     // Make the file path
     char file_path[256];
     snprintf(file_path, sizeof(file_path), "%s%s", FILE_DIR, file_name);

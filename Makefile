@@ -4,7 +4,7 @@ SERVER_SRC = ./src/server.c
 CLIENT_SRC = ./src/client.c
 
 
-test: clean all run_server run_client
+demo: clean all run_server run_client
 
 all: files server client
 
@@ -21,10 +21,11 @@ files:
 	mkdir -p client_files
 	mkdir -p log
 
-run_server: server
+
+run_server:
 	./bin/server &
 
-run_client: client
+run_client:
 	./bin/client 1 11_1.txt &
 	./bin/client 2 11_2.txt &
 	./bin/client 3 12_1.txt &

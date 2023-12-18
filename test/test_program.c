@@ -11,34 +11,32 @@ void compile_client_server() {
     system("gcc src/client.c -o bin/client");
 }
 
-// Create a "log" directory 
-void create_log_dir() {
-    struct stat st = {0};
-    if (stat("log", &st) == -1) {
-        system("mkdir log");
-    }
-}
-
 // Run client and server
 void run_client_server() {
     compile_client_server();
     printf("%s", __FILE__);
     
+    system("rm -rf ./client_files");
+	system("mkdir -p ./client_files");
+
+    system("rm -rf ./log");
+	system("mkdir -p ./log");
+
     system("bin/server &");
     system("bin/client 1 11_1.txt &");
 }
 
 // Check if output file exists
 int check_file_exists() {
-    return access("client_files/11_1.txt", F_OK);
+    return access("./client_files/11_1.txt", F_OK);
 }
 
 int main() {
-    create_log_dir();
     compile_client_server();
     run_client_server();
-    sleep(1); // Sleep for 1 second
+    sleep(5); // Sleep for 1 second
     assert(check_file_exists() == 0);
+    printf("test passed\n");
 
     return 0;
 }
