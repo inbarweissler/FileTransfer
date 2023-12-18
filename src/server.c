@@ -17,11 +17,11 @@
 /******************
  * Global Constants
  ******************/
-#define PORT_NUM 1908
+#define PORT_NUM 1900
 #define OUT_BUFFER_SIZE 1024 //outbound buffer size
 #define IN_FILE_NAME_BUFFER_SIZE 128 //inbound buffer size
 #define FILE_DIR "./server_files/"
-#define MAX_CLIENTS 5
+#define MAX_CLIENTS 10
 
 /****************
  * Function Declarations
@@ -31,7 +31,6 @@
  * Sends the content of a file to a connected client over a specified socket.
  * Parameters:
  *   - client_socket (int): The socket descriptor of the connected client.
- *   - file_name (const char *): The name of the file to be sent.
  * Returns:
  *   - None
  */
@@ -42,11 +41,15 @@ int main() {
     // Create socket
     int server_socket, client_socket;
 
-    // assuming IPv4, and using TCP protocol
+    // IPv4, and using TCP protocol
     if ((server_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
         perror("Error: cannot create socket");
         exit(EXIT_FAILURE);
     }
+
+    // Tries to reuse address
+    int option = 1;
+    setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(int));
 
     // Server address setup
     struct sockaddr_in server_addr, client_addr;
@@ -57,6 +60,8 @@ int main() {
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY; // binds the server to all available network interfaces
     server_addr.sin_port = htons(PORT_NUM); // convers the port number to network byte order
+
+    
 
     // Socket binding
     if (bind(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
@@ -73,6 +78,7 @@ int main() {
     }
 
     printf("Server is listening on port %d\n", PORT_NUM);
+    fflush(stdout);
 
     while(1){
         // Accepting a new connection
@@ -86,6 +92,7 @@ int main() {
 
         // Print connection information
         printf("Client is connected\n");
+        fflush(stdout);
 
         // Handle the connection in a new thread
         pthread_t thread;
@@ -107,6 +114,7 @@ int main() {
     close(server_socket); // close the server socket before exiting
 
     printf("exiting\n");
+    fflush(stdout);
     
     return 0;
 }
@@ -124,7 +132,6 @@ void *send_file(void *socket_desc) {
         close(client_socket);
         return NULL;
     }
-
     // Make the file path
     char file_path[256];
     snprintf(file_path, sizeof(file_path), "%s%s", FILE_DIR, file_name_buffer);

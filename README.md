@@ -15,3 +15,10 @@ Run the program using the following commands:
 ``` shell
 make test
 ```
+
+Run the test file using the following commands:
+
+``` shell
+gcc test/test_program.c -o test/test_program
+./test/test_program
+```

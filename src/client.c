@@ -17,7 +17,7 @@
  * Global Constants
  ******************/
 #define SERVER_IP "127.0.0.1" // assuming that the server runs on the same computer
-#define PORT_NUM 1908
+#define PORT_NUM 1900
 #define OUT_BUFFER_SIZE 1024 // outbound buffer size
 #define FILE_DIR "./client_files/"
 #define LOG_FILE_DIR "./log/client_log.txt"
@@ -41,7 +41,9 @@ void receive_file(int server_socket, const char *file_name);
 
 int main(int argc, char *argv[]) {
     log_file = fopen(LOG_FILE_DIR, "a"); // Open the log file in append mode
-    // TODO: consider changing to write mode
+    // Params to define current time
+    time_t t;
+    struct tm tm;
 
     if (log_file == NULL) {
         perror("Error: cannot open log file");
@@ -51,13 +53,18 @@ int main(int argc, char *argv[]) {
     // Check if the correct number of arguments are provided
     if (argc != 3) {
         fprintf(stderr, "Usage: %s <file_name>\n", argv[0]);
+        fflush(stderr);
+
         exit(EXIT_FAILURE);
     }
 
     int client_id = atoi(argv[1]);
     const char *file_name = argv[2]; // TODO: validate file_name length
 
-    fprintf(log_file, "ID %d, file-name %s\n", client_id, file_name); 
+    t = time(0);
+	tm = *localtime(&t);
+    fprintf(log_file, "%d:%d:%02d #%d, file-name %s\n",tm.tm_hour, tm.tm_min, tm.tm_sec, client_id, file_name); 
+    fflush(log_file);
 
     // Creating a socket
     int client_socket; // store the socket descriptor for the client
@@ -82,14 +89,14 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
     
-    // Print current time
-    time_t t;
-    t = time(NULL);
-    struct tm tm;
+    // Tries to reuse address
+    int option = 1;
+    setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(int));
+    
+    t = time(0);
 	tm = *localtime(&t);
-    fprintf(log_file, "#%d Current Time: %d:%d:%03d\n", client_id, tm.tm_hour, tm.tm_min, tm.tm_sec);
-
-    fprintf(log_file, "#%d Connected to server at %s\n", client_id, SERVER_IP);
+    fprintf(log_file, "%d:%d:%02d #%d Connected to server at %s\n",tm.tm_hour, tm.tm_min, tm.tm_sec, client_id, SERVER_IP);
+    fflush(log_file);
 
     // Sending file_name to the server    
         if (send(client_socket, file_name, strlen(file_name), 0) == -1) {
@@ -98,8 +105,12 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-
     receive_file(client_socket, file_name);
+
+    t = time(0);
+	tm = *localtime(&t);
+    fprintf(log_file, "%d:%d:%02d #%d recived file %s\n", tm.tm_hour, tm.tm_min, tm.tm_sec, client_id, file_name);
+    fflush(log_file);
 
     close(client_socket); // close the client socket before exiting
     fclose(log_file); // Close the log file before exiting
@@ -127,9 +138,8 @@ void receive_file(int server_socket, const char *file_name) {
     while ((bytesCnt = recv(server_socket, msg, sizeof(msg), 0)) > 0) {
         fwrite(msg, 1, bytesCnt, file); // write msg to the file
 
-        // Print received data to the screen
-        // TODO: delete this part later, this is for debug
-        fwrite(msg, 1, bytesCnt, stdout);
+        // Print received data to the screen - for debug
+        // fwrite(msg, 1, bytesCnt, stdout);
     }
 
     // Closing the file and server socket
